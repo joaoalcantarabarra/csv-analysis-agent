@@ -20,7 +20,8 @@ class ChartDataInput(BaseModel):
     x_label: str = Field(default='X-axis', description='Label for x-axis')
     y_label: str = Field(default='Y-axis', description='Label for y-axis')
     filename: Optional[str] = Field(
-        default=None, description='Custom filename for the chart image'
+        default=None,
+        description='Custom filename for the chart image (just the filename, not the full path)',
     )
 
 
@@ -33,7 +34,8 @@ class PieChartInput(BaseModel):
     )
     title: str = Field(default='Pie Chart', description='Title of the chart')
     filename: Optional[str] = Field(
-        default=None, description='Custom filename for the chart image'
+        default=None,
+        description='Custom filename for the chart image (just the filename, not the full path)',
     )
 
 
@@ -50,7 +52,8 @@ class ScatterPlotInput(BaseModel):
     x_label: str = Field(default='X-axis', description='Label for x-axis')
     y_label: str = Field(default='Y-axis', description='Label for y-axis')
     filename: Optional[str] = Field(
-        default=None, description='Custom filename for the chart image'
+        default=None,
+        description='Custom filename for the chart image (just the filename, not the full path)',
     )
     x: Optional[List[Union[int, float]]] = Field(
         default=None, description='Alternative parameter for x-values'
@@ -79,7 +82,8 @@ class HistogramInput(BaseModel):
     x_label: str = Field(default='Values', description='Label for x-axis')
     y_label: str = Field(default='Frequency', description='Label for y-axis')
     filename: Optional[str] = Field(
-        default=None, description='Custom filename for the chart image'
+        default=None,
+        description='Custom filename for the chart image (just the filename, not the full path)',
     )
 
 
@@ -88,10 +92,26 @@ class BarChartTool(BaseTool):
     description: str = (
         'Create a bar chart from the provided data. '
         'Data should be a dictionary with categories as keys and values as numbers, '
-        'or a list of dictionaries, or a JSON string.'
+        'or a list of dictionaries, or a JSON string. '
+        'IMPORTANT: For filename, provide ONLY the filename (e.g., "chart.png"), NOT the full path.'
     )
     args_schema: Type[BaseModel] = ChartDataInput
     output_dir: str = Field(default='charts')
+
+    def _normalize_filename(self, filename: Optional[str]) -> str:
+        """
+        Normalize filename to avoid path duplication.
+        Removes any directory prefix to ensure clean filename.
+        """
+        if filename is None:
+            return None
+
+        filename = os.path.basename(filename)
+
+        if '/' in filename:
+            filename = filename.split('/')[-1]
+
+        return filename
 
     def _normalize_data_for_charts(
         self, data: Union[Dict[str, Any], List[Dict[str, Any]], List[Any], str]
@@ -135,8 +155,9 @@ class BarChartTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         try:
-
             matplotlib.use('Agg')
+
+            os.makedirs(self.output_dir, exist_ok=True)
 
             if isinstance(data, str):
                 try:
@@ -156,10 +177,13 @@ class BarChartTool(BaseTool):
             plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
 
+            filename = self._normalize_filename(filename)
+
             if filename is None:
                 filename = (
                     f'bar_chart_{len(os.listdir(self.output_dir)) + 1}.png'
                 )
+
             file_path = os.path.join(self.output_dir, filename)
             plt.savefig(file_path, dpi=300, bbox_inches='tight')
             plt.close()
@@ -184,10 +208,20 @@ class LineChartTool(BaseTool):
     description: str = (
         'Create a line chart from the provided data. '
         'Data should be a dictionary with x-values as keys and y-values as numbers, '
-        'or a list of dictionaries, or a JSON string.'
+        'or a list of dictionaries, or a JSON string. '
+        'IMPORTANT: For filename, provide ONLY the filename (e.g., "chart.png"), NOT the full path.'
     )
     args_schema: Type[BaseModel] = ChartDataInput
     output_dir: str = Field(default='charts')
+
+    def _normalize_filename(self, filename: Optional[str]) -> str:
+        """Normalize filename to avoid path duplication."""
+        if filename is None:
+            return None
+        filename = os.path.basename(filename)
+        if '/' in filename:
+            filename = filename.split('/')[-1]
+        return filename
 
     def _normalize_data_for_charts(
         self, data: Union[Dict[str, Any], List[Dict[str, Any]], List[Any], str]
@@ -232,6 +266,7 @@ class LineChartTool(BaseTool):
     ) -> str:
         try:
             matplotlib.use('Agg')
+            os.makedirs(self.output_dir, exist_ok=True)
 
             if isinstance(data, str):
                 try:
@@ -252,10 +287,12 @@ class LineChartTool(BaseTool):
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
 
+            filename = self._normalize_filename(filename)
             if filename is None:
                 filename = (
                     f'line_chart_{len(os.listdir(self.output_dir)) + 1}.png'
                 )
+
             file_path = os.path.join(self.output_dir, filename)
             plt.savefig(file_path, dpi=300, bbox_inches='tight')
             plt.close()
@@ -284,10 +321,20 @@ class PieChartTool(BaseTool):
     description: str = (
         'Create a pie chart from the provided data. '
         'Data should be a dictionary with categories as keys and values as numbers, '
-        'or a list of dictionaries, or a JSON string.'
+        'or a list of dictionaries, or a JSON string. '
+        'IMPORTANT: For filename, provide ONLY the filename (e.g., "chart.png"), NOT the full path.'
     )
     args_schema: Type[BaseModel] = PieChartInput
     output_dir: str = Field(default='charts')
+
+    def _normalize_filename(self, filename: Optional[str]) -> str:
+        """Normalize filename to avoid path duplication."""
+        if filename is None:
+            return None
+        filename = os.path.basename(filename)
+        if '/' in filename:
+            filename = filename.split('/')[-1]
+        return filename
 
     def _normalize_data_for_charts(
         self, data: Union[Dict[str, Any], List[Dict[str, Any]], List[Any], str]
@@ -330,6 +377,7 @@ class PieChartTool(BaseTool):
     ) -> str:
         try:
             matplotlib.use('Agg')
+            os.makedirs(self.output_dir, exist_ok=True)
 
             if isinstance(data, str):
                 try:
@@ -346,10 +394,12 @@ class PieChartTool(BaseTool):
             plt.title(title)
             plt.axis('equal')
 
+            filename = self._normalize_filename(filename)
             if filename is None:
                 filename = (
                     f'pie_chart_{len(os.listdir(self.output_dir)) + 1}.png'
                 )
+
             file_path = os.path.join(self.output_dir, filename)
             plt.savefig(file_path, dpi=300, bbox_inches='tight')
             plt.close()
@@ -374,10 +424,20 @@ class ScatterPlotTool(BaseTool):
     description: str = (
         'Create a scatter plot from the provided data. '
         'Requires x_data and y_data as lists of numeric values, '
-        "or alternatively provide data as list of [x,y] pairs or dict with 'x' and 'y' keys."
+        "or alternatively provide data as list of [x,y] pairs or dict with 'x' and 'y' keys. "
+        'IMPORTANT: For filename, provide ONLY the filename (e.g., "chart.png"), NOT the full path.'
     )
     args_schema: Type[BaseModel] = ScatterPlotInput
     output_dir: str = Field(default='charts')
+
+    def _normalize_filename(self, filename: Optional[str]) -> str:
+        """Normalize filename to avoid path duplication."""
+        if filename is None:
+            return None
+        filename = os.path.basename(filename)
+        if '/' in filename:
+            filename = filename.split('/')[-1]
+        return filename
 
     def _run(
         self,
@@ -399,6 +459,7 @@ class ScatterPlotTool(BaseTool):
     ) -> str:
         try:
             matplotlib.use('Agg')
+            os.makedirs(self.output_dir, exist_ok=True)
 
             if x_data is None:
                 x_data = x
@@ -428,10 +489,12 @@ class ScatterPlotTool(BaseTool):
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
 
+            filename = self._normalize_filename(filename)
             if filename is None:
                 filename = (
                     f'scatter_plot_{len(os.listdir(self.output_dir)) + 1}.png'
                 )
+
             file_path = os.path.join(self.output_dir, filename)
             plt.savefig(file_path, dpi=300, bbox_inches='tight')
             plt.close()
@@ -459,10 +522,20 @@ class HistogramTool(BaseTool):
     name: str = 'create_histogram'
     description: str = (
         'Create a histogram from the provided data. '
-        'Data should be a list of numeric values.'
+        'Data should be a list of numeric values. '
+        'IMPORTANT: For filename, provide ONLY the filename (e.g., "chart.png"), NOT the full path.'
     )
     args_schema: Type[BaseModel] = HistogramInput
     output_dir: str = Field(default='charts')
+
+    def _normalize_filename(self, filename: Optional[str]) -> str:
+        """Normalize filename to avoid path duplication."""
+        if filename is None:
+            return None
+        filename = os.path.basename(filename)
+        if '/' in filename:
+            filename = filename.split('/')[-1]
+        return filename
 
     def _run(
         self,
@@ -476,6 +549,7 @@ class HistogramTool(BaseTool):
     ) -> str:
         try:
             matplotlib.use('Agg')
+            os.makedirs(self.output_dir, exist_ok=True)
 
             if not isinstance(data, list) or len(data) == 0:
                 raise ValueError('Data must be a non-empty list of numbers')
@@ -498,10 +572,12 @@ class HistogramTool(BaseTool):
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
 
+            filename = self._normalize_filename(filename)
             if filename is None:
                 filename = (
                     f'histogram_{len(os.listdir(self.output_dir)) + 1}.png'
                 )
+
             file_path = os.path.join(self.output_dir, filename)
             plt.savefig(file_path, dpi=300, bbox_inches='tight')
             plt.close()
