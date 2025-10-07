@@ -1,4 +1,4 @@
-# 🤖 Agente de Análise de Dados
+# Agente de Análise de Dados
 
 Análise inteligente de arquivos CSV usando IA. Faça perguntas em linguagem natural e receba análises e gráficos automaticamente.
 
@@ -6,8 +6,8 @@ Análise inteligente de arquivos CSV usando IA. Faça perguntas em linguagem nat
 
 ### 1. Clone o repositório
 ```bash
-git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-cd SEU_REPOSITORIO
+git clone https://github.com/joaoalcantarabarra/csv-analysis-agent.git
+cd csv-analysis-agent
 ```
 
 ### 2. Crie um ambiente virtual
@@ -31,7 +31,7 @@ streamlit run app.py
 ### 5. Configure sua API Key
 - Acesse `http://localhost:8501`
 - Insira sua API Key do Google Gemini
-- Obtenha sua chave em: https://makersuite.google.com/app/apikey
+- Obtenha sua chave em: https://aistudio.google.com/api-keys
 
 ## Como Usar
 
@@ -41,7 +41,7 @@ streamlit run app.py
 
 ## Tecnologias
 
-- Python 3.8+
+- Python 3.13
 - Streamlit
 - LangChain
 - LangGraph
