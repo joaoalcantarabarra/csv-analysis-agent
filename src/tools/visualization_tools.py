@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 from typing import Any, Dict, List, Optional, Type, Union
@@ -87,6 +88,25 @@ class HistogramInput(BaseModel):
     )
 
 
+def parse_data_string(data: str) -> Union[Dict, List, str]:
+    """
+    Parse data string that can be JSON or Python dict literal.
+
+    Args:
+        data: String representation of data
+
+    Returns:
+        Parsed data structure
+    """
+    try:
+        return json.loads(data)
+    except json.JSONDecodeError:
+        try:
+            return ast.literal_eval(data)
+        except (ValueError, SyntaxError):
+            return data
+
+
 class BarChartTool(BaseTool):
     name: str = 'create_bar_chart'
     description: str = (
@@ -99,18 +119,12 @@ class BarChartTool(BaseTool):
     output_dir: str = Field(default='charts')
 
     def _normalize_filename(self, filename: Optional[str]) -> str:
-        """
-        Normalize filename to avoid path duplication.
-        Removes any directory prefix to ensure clean filename.
-        """
+        """Normalize filename to avoid path duplication."""
         if filename is None:
             return None
-
         filename = os.path.basename(filename)
-
         if '/' in filename:
             filename = filename.split('/')[-1]
-
         return filename
 
     def _normalize_data_for_charts(
@@ -156,14 +170,10 @@ class BarChartTool(BaseTool):
     ) -> str:
         try:
             matplotlib.use('Agg')
-
             os.makedirs(self.output_dir, exist_ok=True)
 
             if isinstance(data, str):
-                try:
-                    data = json.loads(data)
-                except json.JSONDecodeError:
-                    pass
+                data = parse_data_string(data)
 
             normalized_data = self._normalize_data_for_charts(data)
             categories = list(normalized_data.keys())
@@ -178,7 +188,6 @@ class BarChartTool(BaseTool):
             plt.tight_layout()
 
             filename = self._normalize_filename(filename)
-
             if filename is None:
                 filename = (
                     f'bar_chart_{len(os.listdir(self.output_dir)) + 1}.png'
@@ -269,10 +278,7 @@ class LineChartTool(BaseTool):
             os.makedirs(self.output_dir, exist_ok=True)
 
             if isinstance(data, str):
-                try:
-                    data = json.loads(data)
-                except json.JSONDecodeError:
-                    pass
+                data = parse_data_string(data)
 
             normalized_data = self._normalize_data_for_charts(data)
             x_values = list(normalized_data.keys())
@@ -380,10 +386,7 @@ class PieChartTool(BaseTool):
             os.makedirs(self.output_dir, exist_ok=True)
 
             if isinstance(data, str):
-                try:
-                    data = json.loads(data)
-                except json.JSONDecodeError:
-                    pass
+                data = parse_data_string(data)
 
             normalized_data = self._normalize_data_for_charts(data)
             labels = list(normalized_data.keys())
